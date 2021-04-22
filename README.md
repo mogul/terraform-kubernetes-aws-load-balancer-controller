@@ -137,10 +137,10 @@ module "eks" {
 /*
 Setup Local dev info -  This info provides a kubeconfig and related information for connecting to the eks cluster locally.
 
-```sh
+
 aws configure
 aws eks --region $(terraform output -raw region) update-kubeconfig --name $(terraform output -raw cluster_name)
-```
+
 */
 output "cluster_id" {
   description = "EKS cluster ID."

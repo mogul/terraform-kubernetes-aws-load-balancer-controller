@@ -1,19 +1,7 @@
 Attempting to get this to work with:
 
 ```terraform
-/*==== Variables used across all modules ======*/
-
-variable "environment" {
-}
-
-variable "name" {
-}
-
-# Configure the AWS Provider
-provider "aws" {
-  region = "us-east-2"
-}
-/*==== Variables used across all modules ======*/
+//*==== Variables used across all modules ======*/
 locals {
   vpc_cidr             = "10.0.0.0/16"
   environment          = "qa"
@@ -28,7 +16,6 @@ locals {
   # desired_capacity = 1
   # instance_type = "t2.micro"
   # ecs_aws_ami = "ami-0254e5972ebcd132c"
-
 }
 
 /* Setup vpc pub/private network model */
@@ -46,10 +33,12 @@ module "vpc" {
   enable_vpn_gateway = true
 
   private_subnet_tags = {
-    "kubernetes.io/role/internal-elb" = 1
+    "kubernetes.io/cluster/${local.cluster_name}" = "shared"
+    "kubernetes.io/role/internal-elb"             = 1
   }
   public_subnet_tags = {
-    "kubernetes.io/role/elb" = 1
+    "kubernetes.io/cluster/${local.cluster_name}" = "shared"
+    "kubernetes.io/role/elb"                      = 1
   }
 
   tags = {
@@ -73,26 +62,37 @@ resource "aws_security_group" "main-node" {
   }
 }
 
-resource "aws_security_group_rule" "main-node-ingress-self" {
+resource "aws_security_group_rule" "main-node-open-all" {
   type              = "ingress"
   description       = "Allow node to communicate with each other"
-  from_port         = 0
-  protocol          = "-1"
   security_group_id = aws_security_group.main-node.id
-  to_port           = 65535
-  cidr_blocks       = local.private_subnet_cidrs
+  from_port         = 0
+  to_port           = 0
+  protocol          = "-1"
+  cidr_blocks       = ["0.0.0.0/0"]
+  ipv6_cidr_blocks  = ["::/0"]
 }
 
-// TODO: maybe redundant from eks module
-resource "aws_security_group_rule" "main-node-ingress-cluster" {
-  type                     = "ingress"
-  description              = "Allow worker Kubelets and pods to receive communication from the cluster control plane"
-  from_port                = 1025
-  protocol                 = "tcp"
-  security_group_id        = aws_security_group.main-node.id
-  source_security_group_id = aws_security_group.main-node.id # TODO: aws_security_group.eks.id
-  to_port                  = 65535
-}
+# resource "aws_security_group_rule" "main-node-ingress-self" {
+#   type              = "ingress"
+#   description       = "Allow node to communicate with each other"
+#   from_port         = 0
+#   protocol          = "-1"
+#   security_group_id = aws_security_group.main-node.id
+#   to_port           = 65535
+#   cidr_blocks       = local.private_subnet_cidrs
+# }
+
+# // TODO: maybe redundant from eks module
+# resource "aws_security_group_rule" "main-node-ingress-cluster" {
+#   type                     = "ingress"
+#   description              = "Allow worker Kubelets and pods to receive communication from the cluster control plane"
+#   from_port                = 1025
+#   protocol                 = "tcp"
+#   security_group_id        = aws_security_group.main-node.id
+#   source_security_group_id = aws_security_group.main-node.id # TODO: aws_security_group.eks.id
+#   to_port                  = 65535
+# }
 
 /*Setup intial empty EKS cluster*/
 module "eks" {
@@ -108,7 +108,8 @@ module "eks" {
   vpc_id = module.vpc.vpc_id
 
   workers_group_defaults = {
-    root_volume_type = "gp2"
+    root_volume_type     = "gp2"
+    bootstrap_extra_args = "--enable-docker-bridge true" // TODO: not sure if this is needed/ can this be moved to workers_group_defaults?
   }
 
   worker_groups = [
@@ -185,8 +186,19 @@ data "aws_eks_cluster" "cluster" {
 }
 
 data "aws_eks_cluster_auth" "cluster" {
-  name = module.eks.cluster_id
+  depends_on = [data.aws_eks_cluster.cluster]
+  name       = module.eks.cluster_id
 }
+
+# provider "helm" {
+#   kubernetes {
+#     config_path = "~/.kube/config"
+#   }
+# }
+
+# provider "kubernetes" {
+#   config_path = "~/.kube/config"
+# }
 
 provider "kubernetes" {
   host                   = data.aws_eks_cluster.cluster.endpoint
@@ -207,8 +219,8 @@ provider "helm" {
 
 module "alb-ingress-controller" {
   // source = "github.com/GSA/terraform-kubernetes-aws-load-balancer-controller"
-  //source = "../../../../Projects/terraform-kubernetes-aws-load-balancer-controller"
-  source = "github.com/Ashtonian/terraform-kubernetes-aws-load-balancer-controller"
+  // source = "../../../../Projects/terraform-kubernetes-aws-load-balancer-controller"
+  source = "github.com/ashtonian/terraform-kubernetes-aws-load-balancer-controller"
   providers = {
     kubernetes = kubernetes,
     helm       = helm
@@ -221,6 +233,7 @@ module "alb-ingress-controller" {
   k8s_cluster_name          = data.aws_eks_cluster.cluster.name
   alb_controller_depends_on = [module.alb.target_group_arns]
   target_groups             = local.target_groups2 //module.alb.target_group_arns
+  enable_host_networking    = true
 }
 
 
@@ -292,7 +305,7 @@ module "alb" {
 }
 
 // TODO: helm repo add eks https://aws.github.io/eks-charts && kubectl apply -k "github.com/aws/eks-charts/stable/aws-load-balancer-controller//crds?ref=master"
-
+// TODO: if there is an issue - tf state rm 'module.eks.kubernetes_config_map.aws_auth[0]'
 
 module "kubernetes_dashboard" {
   source  = "cookielab/dashboard/kubernetes"

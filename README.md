@@ -225,7 +225,7 @@ module "alb-ingress-controller" {
 
 
 data "aws_route53_zone" "selected" {
-  name = locals.domain
+  name = local.domain
 }
 
 resource "aws_route53_record" "k8dash" {

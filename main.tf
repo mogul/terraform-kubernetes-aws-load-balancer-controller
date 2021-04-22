@@ -439,6 +439,17 @@ data "template_file" "kubeconfig" {
   EOF
 }
 
+# locals {
+#   target_group_attachments = merge(flatten([
+#     for index, group in var.target_groups : [
+#       for k, targets in group : {
+#         for target_key, target in targets : join(".", [index, target_key]) => merge({ tg_index = index }, target)
+#       }
+#       if k == "targets"
+#     ]
+#   ])...)
+# }
+
 # Since the kubernetes_provider cannot yet handle CRDs, we need to set any
 # supplied TargetGroupBinding using a null_resource.
 #
@@ -447,7 +458,7 @@ data "template_file" "kubeconfig" {
 # https://medium.com/citihub/a-more-secure-way-to-call-kubectl-from-terraform-1052adf37af8
 
 resource "null_resource" "supply_target_group_arns" {
-  count = (var.alb_target_group_arns != "") ? 1 : 0
+  count = (length(var.target_groups) > 0) ? length(var.target_groups) : 0
   provisioner "local-exec" {
     interpreter = ["/bin/bash", "-c"]
     environment = {
@@ -458,12 +469,12 @@ resource "null_resource" "supply_target_group_arns" {
       apiVersion: elbv2.k8s.aws/v1beta1
       kind: TargetGroupBinding
       metadata:
-        name:
+        name: ${lookup(var.target_groups[count.index], "name", "")}
       spec:
         serviceRef:
-          name: awesome-service # route traffic to the awesome-service
-          port: 80
-        targetGroupARN: ${var.alb_target_group_arns}
+          name: ${lookup(var.target_groups[count.index], "name", "")}
+          port: ${lookup(var.target_groups[count.index], "backend_port", "")}
+        targetGroupARN: ${lookup(var.target_groups[count.index], "target_group_arn", "")}
       YAML
     EOF
   }

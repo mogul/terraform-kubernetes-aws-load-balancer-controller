@@ -412,6 +412,10 @@ resource "helm_release" "alb_controller" {
     name  = "vpcId"
     value = local.aws_vpc_id
   }
+  set {
+    name  = "hostNetwork"
+    value = var.enable_host_networking
+  }
 
   depends_on = [var.alb_controller_depends_on]
 }

@@ -80,3 +80,9 @@ variable "target_groups" {
   default     = []
   # default     = ""
 }
+
+
+variable "enable_host_networking" {
+  type    = bool
+  default = false
+}

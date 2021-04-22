@@ -1,6 +1,13 @@
 Attempting to get this to work with:
 
 ```terraform
+
+variable "environment" {
+}
+
+variable "name" {
+}
+
 //*==== Variables used across all modules ======*/
 locals {
   vpc_cidr             = "10.0.0.0/16"

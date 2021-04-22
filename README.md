@@ -207,7 +207,8 @@ provider "helm" {
 
 module "alb-ingress-controller" {
   // source = "github.com/GSA/terraform-kubernetes-aws-load-balancer-controller"
-  source = "../../../../Projects/terraform-kubernetes-aws-load-balancer-controller"
+  //source = "../../../../Projects/terraform-kubernetes-aws-load-balancer-controller"
+  source = "github.com/Ashtonian/terraform-kubernetes-aws-load-balancer-controller"
   providers = {
     kubernetes = kubernetes,
     helm       = helm

@@ -14,7 +14,6 @@ provider "aws" {
   region = "us-east-2"
 }
 
-
 locals {
   vpc_cidr             = "10.0.0.0/16"
   environment          = "qa"
@@ -23,6 +22,7 @@ locals {
   availability_zones   = ["us-east-2a", "us-east-2b", "us-east-2c"]
   cluster_name         = "${var.environment}-${var.name}-eks-cluster"
   region               = "us-east-2" // TODO: sync with provider or use same root var
+  domain               = "kevinistheworst.com"
   # max_size = 1
   # min_size = 1
   # desired_capacity = 1
@@ -137,9 +137,10 @@ module "eks" {
 /*
 Setup Local dev info -  This info provides a kubeconfig and related information for connecting to the eks cluster locally.
 
+```sh
 aws configure
 aws eks --region $(terraform output -raw region) update-kubeconfig --name $(terraform output -raw cluster_name)
-
+```
 */
 output "cluster_id" {
   description = "EKS cluster ID."
@@ -226,7 +227,7 @@ module "alb-ingress-controller" {
 
 
 data "aws_route53_zone" "selected" {
-  name = "kevinistheworst.com"
+  name = locals.domain
 }
 
 resource "aws_route53_record" "k8dash" {
@@ -245,63 +246,6 @@ locals { // TODO: merge
       backend_protocol = "HTTP"
       backend_port     = 80
       target_type      = "ip"
-
-    }
-  ]
-  target_groups2 = [
-    {
-      # name_prefix      = "pref-"
-      name             = module.kubernetes_dashboard.kubernetes_dashboard_service_name
-      backend_protocol = "HTTP"
-      backend_port     = 80
-      target_type      = "ip"
-      target_group_arn = module.alb.target_group_arns[0]
-    }
-  ]
-}
-
-module "alb" {
-  source = "terraform-aws-modules/alb/aws"
-  # version = "~> 5.0"
-
-  name = "my-alb"
-
-  load_balancer_type = "application"
-
-  vpc_id          = module.vpc.vpc_id
-  subnets         = module.vpc.public_subnets
-  security_groups = [aws_security_group.main-node.id]
-
-  # access_logs = {
-  #   bucket = "my-alb-logs"
-  # }
-
-  target_groups = local.target_groups
-
-  http_tcp_listeners = [
-    {
-      port               = 80
-      protocol           = "HTTP"
-      target_group_index = 0
-    }
-  ]
-
-  tags = {
-    Environment = "Test"
-  }
-}
-
-// TODO: helm repo add eks https://aws.github.io/eks-charts && kubectl apply -k "github.com/aws/eks-charts/stable/aws-load-balancer-controller//crds?ref=master"
-
-
-module "kubernetes_dashboard" {
-  source  = "cookielab/dashboard/kubernetes"
-  version = "0.9.0"
-
-  kubernetes_namespace_create = true
-  kubernetes_dashboard_csrf   = "babblblb" // TODO::
-  # kubernetes_resources_labels =
-}
 
 ```
 

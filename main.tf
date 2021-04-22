@@ -473,7 +473,7 @@ resource "null_resource" "supply_target_group_arns" {
       apiVersion: elbv2.k8s.aws/v1beta1
       kind: TargetGroupBinding
       metadata:
-        name: ${lookup(var.target_groups[count.index], "name", "")}
+        name: ${lookup(var.target_groups[count.index], "name", "")}-tgb
       spec:
         serviceRef:
           name: ${lookup(var.target_groups[count.index], "name", "")}

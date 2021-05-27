@@ -399,6 +399,7 @@ resource "helm_release" "alb_controller" {
       "serviceAccount.name"   = (var.k8s_cluster_type == "eks") ? kubernetes_service_account.this.metadata[0].name : null
       "region"                = local.aws_region_name
       "vpcId"                 = local.aws_vpc_id
+      "hostNetwork"           = var.enable_host_networking
     }
     content {
       name  = set.key

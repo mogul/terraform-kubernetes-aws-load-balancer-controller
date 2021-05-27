@@ -79,3 +79,9 @@ variable "target_groups" {
   type        = any
   default     = []
 }
+
+variable "enable_host_networking" {
+  description = "If true enable host networking. See https://github.com/aws/eks-charts/tree/master/stable/aws-load-balancer-controller#configuration for details."
+  type    = bool
+  default = false
+}

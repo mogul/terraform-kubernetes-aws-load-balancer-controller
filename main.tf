@@ -22,6 +22,7 @@ data "aws_caller_identity" "current" {}
 data "aws_eks_cluster" "selected" {
   count = var.k8s_cluster_type == "eks" ? 1 : 0
   name  = var.k8s_cluster_name
+  depends_on = [var.alb_controller_depends_on]
 }
 
 # Authentication data for that cluster

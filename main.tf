@@ -29,6 +29,7 @@ data "aws_eks_cluster" "selected" {
 data "aws_eks_cluster_auth" "selected" {
   count = var.k8s_cluster_type == "eks" ? 1 : 0
   name  = var.k8s_cluster_name
+  depends_on = [var.alb_controller_depends_on]
 }
 
 data "aws_iam_policy_document" "ec2_assume_role" {

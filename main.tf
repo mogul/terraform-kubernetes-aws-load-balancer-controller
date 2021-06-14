@@ -437,16 +437,7 @@ data "template_file" "kubeconfig" {
   EOF
 }
 
-# locals {
-#   target_group_attachments = merge(flatten([
-#     for index, group in var.target_groups : [
-#       for k, targets in group : {
-#         for target_key, target in targets : join(".", [index, target_key]) => merge({ tg_index = index }, target)
-#       }
-#       if k == "targets"
-#     ]
-#   ])...)
-# }
+
 
 # Since the kubernetes_provider cannot yet handle CRDs, we need to set any
 # supplied TargetGroupBinding using a null_resource.

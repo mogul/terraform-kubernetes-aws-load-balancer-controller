@@ -67,7 +67,7 @@ variable "aws_tags" {
 variable "aws_load_balancer_controller_chart_version" {
   description = "The AWS Load Balancer Controller version to use. See https://github.com/kubernetes-sigs/aws-load-balancer-controller/releases for available versions"
   type        = string
-  default     = "1.1.1"
+  default     = "2.2.0"
 }
 
 variable "alb_controller_depends_on" {

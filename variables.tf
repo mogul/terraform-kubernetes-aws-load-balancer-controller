@@ -78,7 +78,6 @@ variable "target_groups" {
   description = "Group Binding detals for TargetGroupBindings. Expected object fields: name, backend_port, target_group_arn, target_type See https://kubernetes-sigs.github.io/aws-load-balancer-controller/v2.1/guide/targetgroupbinding/targetgroupbinding/ for details."
   type        = any
   default     = []
-  # default     = ""
 }
 
 variable "enable_host_networking" {

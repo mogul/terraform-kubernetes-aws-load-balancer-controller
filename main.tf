@@ -20,15 +20,15 @@ data "aws_caller_identity" "current" {}
 
 # The EKS cluster (if any) that represents the installation target.
 data "aws_eks_cluster" "selected" {
-  count = var.k8s_cluster_type == "eks" ? 1 : 0
-  name  = var.k8s_cluster_name
+  count      = var.k8s_cluster_type == "eks" ? 1 : 0
+  name       = var.k8s_cluster_name
   depends_on = [var.alb_controller_depends_on]
 }
 
 # Authentication data for that cluster
 data "aws_eks_cluster_auth" "selected" {
-  count = var.k8s_cluster_type == "eks" ? 1 : 0
-  name  = var.k8s_cluster_name
+  count      = var.k8s_cluster_type == "eks" ? 1 : 0
+  name       = var.k8s_cluster_name
   depends_on = [var.alb_controller_depends_on]
 }
 
@@ -411,6 +411,7 @@ resource "helm_release" "alb_controller" {
   atomic     = true
   timeout    = 900
   dynamic "set" {
+
     for_each = {
       "clusterName"           = var.k8s_cluster_name
       "serviceAccount.create" = (var.k8s_cluster_type != "eks")
@@ -419,6 +420,14 @@ resource "helm_release" "alb_controller" {
       "vpcId"                 = local.aws_vpc_id
       "hostNetwork"           = var.enable_host_networking
     }
+    content {
+      name  = set.key
+      value = set.value
+    }
+  }
+
+  dynamic "set" {
+    for_each = var.chart_env_overrides
     content {
       name  = set.key
       value = set.value

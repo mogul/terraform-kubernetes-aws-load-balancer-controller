@@ -430,6 +430,7 @@ resource "helm_release" "alb_controller" {
       "region"                = local.aws_region_name
       "vpcId"                 = local.aws_vpc_id
       "hostNetwork"           = var.enable_host_networking
+      "replicaCount"          = var.k8s_replicas
     }
     content {
       name  = set.key
@@ -441,6 +442,22 @@ resource "helm_release" "alb_controller" {
     for_each = var.chart_env_overrides
     content {
       name  = set.key
+      value = set.value
+    }
+  }
+
+  dynamic "set" {
+    for_each = var.k8s_pod_annotations
+    content {
+      name  = "podAnnotations.${set.key}"
+      value = set.value
+    }
+  }
+
+  dynamic "set" {
+    for_each = var.k8s_pod_labels
+    content {
+      name  = "podLabels.${set.key}"
       value = set.value
     }
   }

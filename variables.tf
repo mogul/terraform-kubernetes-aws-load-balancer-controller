@@ -21,13 +21,14 @@ variable "k8s_replicas" {
   default     = 1
 }
 
-
+# missing
 variable "k8s_pod_annotations" {
   description = "Additional annotations to be added to the Pods."
   type        = map(string)
   default     = {}
 }
 
+# missing
 variable "k8s_pod_labels" {
   description = "Additional labels to be added to the Pods."
   type        = map(string)
